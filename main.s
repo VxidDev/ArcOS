@@ -53,6 +53,7 @@ _start:
 %include "core/shell.s"  ; provides userInput
 
 prompt: db "ArcOS > ", 0
+promptLen equ $ - prompt
 
 inputBuf: times 32 db 0
 
