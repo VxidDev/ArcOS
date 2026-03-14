@@ -16,10 +16,6 @@ _start:
     
     call clears
 
-    mov dh, 12
-    mov dl, 28
-    call mvcrsr
-
     mov si, greetingPt1
     mov bl, 0x0F
     call printcs
@@ -36,10 +32,29 @@ _start:
     mov bl, 0x0F
     call printcs
 
+    call printnl
+    call printnl
+
+    .shell:
+        mov si, prompt
+        mov bl, 0x0B 
+        call printcs
+
+        call userInput
+        call printnl 
+
+        jmp .shell
+
     jmp $
 
-%include "core/output.s" ; provides prints , printcs , clears
+%include "core/output.s" ; provides prints , printcs , printnl , clears
 %include "core/cursor.s" ; provides mvcrsr
+%include "core/input.s"  ; provides getchar 
+%include "core/shell.s"  ; provides userInput
+
+prompt: db "ArcOS > ", 0
+
+inputBuf: times 32 db 0
 
 greetingPt1: db "Welcome to ", 0
 greetingPt2: db "Arc", 0
