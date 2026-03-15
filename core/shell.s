@@ -92,6 +92,37 @@ parseInput: ; parses user input and executes command based on it.
             ret 
 
         .skipEcho:
+
+    xor bx, bx 
+    mov si, clear
+
+    .clearLoop:
+        cmp bx, clearLen 
+        je .execClear
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipClear
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipClear
+
+        inc bx
+        jmp .clearLoop  
+
+        .execClear:
+            mov si, inputBuf
+            add si, clearLen
+            
+            cmp byte [si], 0 ; check if null-terminated 
+            jne .skipClear 
+
+            call clears 
+
+            ret 
+
+        .skipClear:
             
     mov si, commandNotFound
     mov bl, 0x04

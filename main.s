@@ -51,7 +51,7 @@ _start:
 %include "core/output.s" ; provides prints , printcs , printnl , clears
 %include "core/cursor.s" ; provides mvcrsr
 %include "core/input.s"  ; provides getchar 
-%include "core/shell.s"  ; provides userInput
+%include "core/shell.s"  ; provides userInput , parseInput
 
 prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt
@@ -60,6 +60,9 @@ inputBuf: times 32 db 0
 
 echo: db "echo"
 echoLen equ $ - echo
+
+clear: db "clear"
+clearLen equ $ - clear
 
 commandNotFound: db "Command not found!", 0
 
