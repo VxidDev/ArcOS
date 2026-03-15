@@ -41,7 +41,8 @@ _start:
         call printcs
 
         call userInput
-        call printnl 
+        call printnl
+        call parseInput 
 
         jmp .shell
 
@@ -56,6 +57,11 @@ prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt
 
 inputBuf: times 32 db 0
+
+echo: db "echo"
+echoLen equ $ - echo
+
+commandNotFound: db "Command not found!", 0
 
 greetingPt1: db "Welcome to ", 0
 greetingPt2: db "Arc", 0

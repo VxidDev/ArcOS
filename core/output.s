@@ -58,8 +58,11 @@ printnl: ; print a singular newline.
         mov cl, 0 ; left column
         mov dh, 24 ; bottom row
         mov dl, 79 ; right column
-
         int 0x10
+
+        mov dh, 24
+        xor dl, dl
+        call mvcrsr
 
     .end:
         ret

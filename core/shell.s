@@ -25,7 +25,7 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
         jmp .loop
 
         .enter:
-            mov si , 0 ; null-terminate
+            mov byte [si] , 0 ; null-terminate
             ret   
 
         .backspace:
@@ -52,3 +52,52 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
 
         .skipremoval:
             jmp .loop
+
+parseInput: ; parses user input and executes command based on it.
+    mov si, echo
+    xor bx, bx  
+
+    .echoLoop:
+        cmp bx, echoLen 
+        je .execEcho
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipEcho
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipEcho
+
+        inc bx
+        jmp .echoLoop  
+
+        .execEcho:
+            mov si, inputBuf
+            add si, echoLen
+
+            cmp byte [si], 0 ; check if end 
+            je .nl 
+
+            cmp byte [si], ' ' ; check if space 
+            jne .skipEcho 
+
+            inc si
+
+            call prints
+
+            .nl:
+                call printnl 
+
+            ret 
+
+        .skipEcho:
+            
+    mov si, commandNotFound
+    mov bl, 0x04
+    call printcs
+    call printnl
+
+    ret
+    
+        
