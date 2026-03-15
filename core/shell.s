@@ -2,6 +2,8 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
     mov di, si 
     add di, 32
 
+    call getcrsr
+
     .loop:
         call getchar
 
@@ -17,8 +19,14 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
         mov byte [si], al ; store character
         inc si 
 
-        mov ah, 0x0E ; Teletype Output
-        int 0x10
+        mov ah, 09h
+        mov bh, 0
+        mov bl, [currColor]
+        mov cx, 1
+        int 10h
+
+        inc dl 
+        call mvcrsr
 
         .skip:  
 
@@ -46,7 +54,7 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
             mov ah, 09h
             mov al, ' '
             mov bh, 0
-            mov bl, 0x07
+            mov bl, [currColor]
             mov cx, 1
             int 10h
 
@@ -114,7 +122,7 @@ parseInput: ; parses user input and executes command based on it.
         .execClear:
             mov si, inputBuf
             add si, clearLen
-            
+
             cmp byte [si], 0 ; check if null-terminated 
             jne .skipClear 
 
@@ -123,12 +131,51 @@ parseInput: ; parses user input and executes command based on it.
             ret 
 
         .skipClear:
+    
+    xor bx, bx 
+    mov si, color
+
+    .colorLoop:
+        cmp bx, colorLen 
+        je .execColor
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipColor 
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipColor
+
+        inc bx
+        jmp .colorLoop  
+
+    .execColor:
+        mov si, inputBuf
+        add si, colorLen    
+
+        cmp byte [si], ' '   
+        jne .defaultColor
+        inc si               ; move past the space
+
+        call strhex 
+        mov [currColor], al
+
+        jmp .doneColor 
+
+    .defaultColor:
+        mov [currColor] , 0x07
+        ret
+
+    .doneColor:
+        ret
+
+    .skipColor:
             
     mov si, commandNotFound
     mov bl, 0x04
+
     call printcs
     call printnl
 
-    ret
-    
-        
+    ret   

@@ -1,2 +1,8 @@
 # ArcOS
-A lightweight, CLI based operating system located purely on MBR. 
+
+A lightweight, CLI based operating system.
+
+## Current progress:
+    [x] bootloader
+    [ ] basic shell functionality ( in progress... )
+    [ ] filesystem

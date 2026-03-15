@@ -1,19 +1,19 @@
-[org 0x7C00]
+[org 0x0000]
 [bits 16]
 
-global _start
+global kernel_main
 
-_start:
+kernel_main:
     cli ; disable interrupts
 
-    xor ax, ax
+    mov ax, 0x0800
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x7C00
+    mov sp, 0x8000 
 
     sti ; enable interrupts
-    
+
     call clears
 
     mov si, greetingPt1
@@ -35,23 +35,22 @@ _start:
     call printnl
     call printnl
 
-    .shell:
-        mov si, prompt
-        mov bl, 0x0B 
-        call printcs
+.shell:
+    mov si, prompt
+    mov bl, 0x0B 
+    call printcs
 
-        call userInput
-        call printnl
-        call parseInput 
+    call userInput
+    call printnl
+    call parseInput 
 
-        jmp .shell
+    jmp .shell
 
-    jmp $
-
-%include "core/output.s" ; provides prints , printcs , printnl , clears
-%include "core/cursor.s" ; provides mvcrsr
-%include "core/input.s"  ; provides getchar 
-%include "core/shell.s"  ; provides userInput , parseInput
+%include "core/output.s" 
+%include "core/cursor.s"
+%include "core/input.s"  
+%include "core/shell.s" 
+%include "core/utils.s"
 
 prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt
@@ -64,13 +63,14 @@ echoLen equ $ - echo
 clear: db "clear"
 clearLen equ $ - clear
 
+color: db "color"
+colorLen equ $ - color 
+
+currColor: db 0x07
+
 commandNotFound: db "Command not found!", 0
 
 greetingPt1: db "Welcome to ", 0
 greetingPt2: db "Arc", 0
 greetingPt3: db "OS", 0
 greetingPt4: db "!", 0
-
-times 510 - ($ - $$) db 0
-dw 0xAA55
-
