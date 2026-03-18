@@ -171,6 +171,36 @@ parseInput: ; parses user input and executes command based on it.
         ret
 
     .skipColor:
+
+    xor bx, bx 
+    mov si, shutdown
+
+    .shutdownLoop:
+        cmp bx, shutdownLen
+        je .execShutdown
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipShutdown 
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipShutdown
+
+        inc bx
+        jmp .shutdownLoop  
+
+    .execShutdown:
+        mov si, inputBuf
+        add si, shutdownLen    
+
+        cmp byte [si], 0   
+        jne .skipShutdown
+
+        call shtdwn
+        ret
+
+    .skipShutdown:
             
     mov si, commandNotFound
     mov bl, 0x04

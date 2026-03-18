@@ -51,6 +51,7 @@ kernel_main:
 %include "core/input.s"  
 %include "core/shell.s" 
 %include "core/utils.s"
+%include "core/system.s"
 
 prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt
@@ -64,9 +65,12 @@ clear: db "clear"
 clearLen equ $ - clear
 
 color: db "color"
-colorLen equ $ - color 
+colorLen equ $ - color
 
 currColor: db 0x07
+
+shutdown: db "shutdown"
+shutdownLen equ $ - shutdown
 
 commandNotFound: db "Command not found!", 0
 
