@@ -12,6 +12,15 @@ kernel_main:
     mov ss, ax
     mov sp, 0x8000 
 
+    xor ax, ax
+    mov ds, ax
+
+    mov word [0x80 * 4], syscallHandler
+    mov word [0x80 * 4 + 2], cs
+
+    mov ax, 0x0800
+    mov ds, ax
+
     sti ; enable interrupts
 
     call clears
@@ -46,12 +55,13 @@ kernel_main:
 
     jmp .shell
 
-%include "core/output.s" 
-%include "core/cursor.s"
-%include "core/input.s"  
-%include "core/shell.s" 
-%include "core/utils.s"
-%include "core/system.s"
+%include "core/output.s" ; provides prints, printc, printcs, printnl, clears 
+%include "core/cursor.s" ; provides mvcrsr, getcrsr
+%include "core/input.s"  ; provides getchar 
+%include "core/shell.s"  ; provides userInput, parseInput
+%include "core/utils.s"  ; provides strhex 
+%include "core/system.s" ; provides shtdwn 
+%include "core/syscall.s" ; provides syscallHandler
 
 prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt

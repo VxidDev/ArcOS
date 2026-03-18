@@ -92,10 +92,12 @@ parseInput: ; parses user input and executes command based on it.
 
             inc si
 
-            call prints
+            mov ah, 0x01
+            int 0x80
 
             .nl:
-                call printnl 
+                mov ah, 0x02 
+                int 0x80
 
             ret 
 

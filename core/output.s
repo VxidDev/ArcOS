@@ -1,4 +1,6 @@
 prints: ; prints a singular singular string | usage: si = string
+    pusha
+
     cld ; clear direction flag to ensure that SI will increment instead of decrementing.
 
     .loop:
@@ -13,7 +15,14 @@ prints: ; prints a singular singular string | usage: si = string
         jmp .loop
 
         .end:
+            popa 
             ret
+
+printc: ; print a single character. | usage: al = char
+    mov ah, 0x0E
+    int 0x10
+
+    ret
 
 printcs: ; prints a colored, singular string. | usage: si = string , bl = color.
     cld ; clear direction flag to ensure that SI will increment instead of decrementing.
