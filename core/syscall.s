@@ -1,6 +1,10 @@
 syscallHandler:
     pusha
 
+    ; 0x00 -> 0x10 - output based syscalls
+    ; 0x10 -> 0x20 - input based syscalls
+    ; 0x90 -> 0xA0 - system based syscalls 
+
     cmp ah, 0x00 ; sys_print_char || printc
     je sys_print_char
 
@@ -9,6 +13,15 @@ syscallHandler:
 
     cmp ah, 0x02 ; sys_print_newline || printnl
     je sys_print_newline
+
+    cmp ah, 0x10 ; sys_getchar || getchar
+    je sys_getchar
+
+    cmp ah, 0xA0 ; sys_shutdown || shtdwn
+    je sys_shutdown
+
+    cmp ah, 0xA1 ; sys_reboot || rbt 
+    je sys_reboot
 
     jmp sys_done
 
@@ -23,6 +36,18 @@ sys_print_string:
 sys_print_newline:
     call printnl
     jmp sys_done
+
+sys_getchar:
+    call getchar 
+    jmp sys_done
+
+sys_reboot:
+    call rbt 
+    jmp sys_done ; not needed, but just for sure.
+
+sys_shutdown:
+    call shtdwn 
+    jmp sys_done ; not needed, but just for sure.
 
 sys_done:
     popa

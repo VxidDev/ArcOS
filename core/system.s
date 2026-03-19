@@ -26,3 +26,16 @@ shtdwn: ; shutdown PC.
     .hang:
         hlt
         jmp .hang
+
+rbt: ; reboot PC.
+    cli                 ; disable interrupts
+
+    .waitInput:
+        in al, 0x64     ; read status register
+        test al, 0x02   ; input buffer full?
+        jnz .waitInput ; wait until empty
+
+    mov al, 0xFE        ; reset command
+    out 0x64, al
+
+    hlt                 ; just in case

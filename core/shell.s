@@ -199,10 +199,44 @@ parseInput: ; parses user input and executes command based on it.
         cmp byte [si], 0   
         jne .skipShutdown
 
-        call shtdwn
+        mov ah, 0xA0
+        int 0x80
+        
         ret
 
     .skipShutdown:
+
+    xor bx, bx 
+    mov si, reboot 
+
+    .rebootLoop:
+        cmp bx, rebootLen
+        je .execReboot
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipReboot 
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipReboot 
+
+        inc bx
+        jmp .rebootLoop  
+
+    .execReboot:
+        mov si, inputBuf
+        add si, rebootLen    
+
+        cmp byte [si], 0   
+        jne .skipReboot
+
+        mov ah, 0xA1
+        int 0x80
+
+        ret
+
+    .skipReboot:
             
     mov si, commandNotFound
     mov bl, 0x04

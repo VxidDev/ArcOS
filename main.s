@@ -82,6 +82,9 @@ currColor: db 0x07
 shutdown: db "shutdown"
 shutdownLen equ $ - shutdown
 
+reboot: db "reboot"
+rebootLen equ $ - reboot
+
 commandNotFound: db "Command not found!", 0
 
 greetingPt1: db "Welcome to ", 0
