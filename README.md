@@ -107,7 +107,7 @@ To add a new command to the ArcOS shell, you need to modify `main.s` and `core/s
 
 The project is organized into the following files:
 
-*   `boot.s`: The bootloader. (Not present in the provided file list, but mentioned in the original README)
+*   `boot.s`: The bootloader.
 *   `main.s`: The main kernel file, containing the entry point and the main shell loop.
 *   `makefile`: The build script for NASM.
 *   `core/`: A directory for the core components of the OS.
