@@ -2,8 +2,6 @@
 
 **ArcOS** is a lightweight, 16-bit command-line operating system written entirely in x86 assembly for the IBM PC and compatible systems. 
 
-The primary goal of ArcOS is to provide a simple, interactive environment that demonstrates the core mechanics of an operating system, including handling interrupts, managing screen output, and processing user input.
-
 ## Features
 
 *   **16-bit Bootloader:** Boots directly from a floppy or hard disk image.
