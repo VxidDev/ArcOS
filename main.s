@@ -67,6 +67,7 @@ kernel_main:
 
 ; removing this breaks parseInput
 %include "progs/calc.s" ; provides calc
+%include "progs/time.s" ; provides time
 
 itoa_isNeg: db 0
 
@@ -102,6 +103,20 @@ rebootLen equ $ - reboot
 
 calcCmd: db "calc"
 calcLen equ $ - calcCmd
+
+timeCmd: db "time"
+timeLen equ $ - timeCmd
+
+time_hours: dw 0
+time_minutes: dw 0
+time_seconds: dw 0
+time_hoursItoaBuf: times 5 db 0
+time_minutesItoaBuf: times 5 db 0
+time_secondsItoaBuf: times 5 db 0 
+time_separator: db ':', 0
+time_zero: db '0', 0, 0 ; additional byte for safety
+
+tz_offset: db 0
 
 commandNotFound: db "Command not found!", 0
 

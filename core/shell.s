@@ -273,6 +273,38 @@ parseInput: ; parses user input and executes command based on it.
         ret
 
     .skipCalc:
+
+    xor bx, bx 
+    mov si, timeCmd
+
+    .timeLoop:
+        cmp bx, timeLen 
+        je .execTime
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipTime  
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipTime 
+
+        inc bx
+        jmp .timeLoop  
+
+    .execTime:
+        mov si, inputBuf
+        add si, timeLen    
+
+        cmp byte [si], 0   
+        jne .skipTime 
+        
+        call time
+        call printnl
+
+        ret 
+
+    .skipTime:
             
     mov si, commandNotFound
     mov bl, 0x04
