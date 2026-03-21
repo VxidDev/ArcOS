@@ -201,7 +201,7 @@ parseInput: ; parses user input and executes command based on it.
 
         mov ah, 0xA0
         int 0x80
-        
+
         ret
 
     .skipShutdown:
@@ -237,6 +237,42 @@ parseInput: ; parses user input and executes command based on it.
         ret
 
     .skipReboot:
+
+    xor bx, bx 
+    mov si, calcCmd
+
+    .calcLoop:
+        cmp bx, calcLen
+        je .execCalc 
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipCalc 
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipCalc  
+
+        inc bx
+        jmp .calcLoop  
+
+    .execCalc:
+        mov si, inputBuf
+        add si, calcLen    
+
+        cmp byte [si], ' '   
+        jne .defaultCalc
+        inc si ; move past the space
+ 
+        call calc 
+        
+        ret
+
+    .defaultCalc:
+        cmp byte [si], 0
+        ret
+
+    .skipCalc:
             
     mov si, commandNotFound
     mov bl, 0x04

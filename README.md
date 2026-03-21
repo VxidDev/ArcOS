@@ -7,7 +7,11 @@
 *   **16-bit Bootloader:** Boots directly from a floppy or hard disk image.
 *   **Interactive Shell:** A simple command-line interface for user interaction.
 *   **Syscall-based API:** A basic set of system calls for core functionalities.
-*   **Built-in Commands:** Includes essential commands like `echo`, `clear`, `color`, `shutdown`, and `reboot`.
+*   **Built-in Commands:** Includes essential commands like `echo`, `clear`, `color`, `shutdown`, `reboot`, and `calc` (a simple calculator).
+
+## License
+
+ArcOS is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
 ## Getting Started
 
@@ -116,3 +120,5 @@ The project is organized into the following files:
     *   `syscall.s`: The system call handler.
     *   `system.s`: System-level functions like shutdown and reboot.
     *   `utils.s`: Utility functions.
+*   `progs/`: A directory for user programs.
+    *   `calc.s`: A simple calculator program implemented as a shell command.

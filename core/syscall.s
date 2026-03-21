@@ -3,7 +3,7 @@ syscallHandler:
 
     ; 0x00 -> 0x10 - output based syscalls
     ; 0x10 -> 0x20 - input based syscalls
-    ; 0x90 -> 0xA0 - system based syscalls 
+    ; 0xA0 -> 0xB0 - system based syscalls 
 
     cmp ah, 0x00 ; sys_print_char || printc
     je sys_print_char
