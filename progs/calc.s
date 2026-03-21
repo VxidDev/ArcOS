@@ -10,10 +10,44 @@ calc: ; parse an input string (si) and prints value. | example string: "1 + 5" -
 
     .firstNumLoop:
         cmp byte [si + bx], ' ' ; check if whitespace
-        je .nullTerminate 
+        je .nullTerminate
 
-        inc bx 
-        jmp .firstNumLoop
+        cmp byte [si + bx], '-'
+        je .skipValidation
+
+        cmp byte [si + bx], '0'
+        jl .checkOper 
+
+        cmp byte [si + bx], '9'
+        jg .checkOper 
+
+        .skipValidation:
+            inc bx 
+            jmp .firstNumLoop
+
+    .checkOper:
+        cmp byte [si + bx], '+'
+        je .setOper
+
+        cmp byte [si + bx], '-'
+        je .setOper 
+
+        cmp byte [si + bx], '/'
+        je .setOper 
+
+        cmp byte [si + bx], '*'
+        je .setOper
+
+        jmp .inv
+
+        .setOper:
+            mov al, byte [si + bx]
+            mov [calc_operator], al
+
+            inc si
+            add si, bx 
+
+            jmp .saveSecondNum
 
     .nullTerminate:
         mov byte [si + bx], 0 ; null-terminate
@@ -43,6 +77,36 @@ calc: ; parse an input string (si) and prints value. | example string: "1 + 5" -
         jmp .skipWhitespace
 
     .saveSecondNum:
+        mov di, si ; preserve si 
+
+        .checkValid:
+            cmp byte [si], 0 
+            je .valid
+
+            cmp byte [si], '-'
+            je .skipCheck
+
+            cmp byte [si], '0'
+            jl .inv  
+
+            cmp byte [si], '9'
+            jg .inv
+
+            .skipCheck:
+
+            jmp .incSi
+
+            .incBoth:
+                inc di
+
+            .incSi:
+                inc si
+
+            jmp .checkValid
+
+        .valid:
+            mov si, di
+
         call atoi
         mov [calc_secondNum], ax
 
@@ -86,6 +150,9 @@ calc: ; parse an input string (si) and prints value. | example string: "1 + 5" -
         jmp .print 
 
     .div:
+        cmp [calc_secondNum], 0
+        je .divZeroErr
+
         xor dx, dx 
         mov ax, [calc_firstNum]
         mov cx, [calc_secondNum]
@@ -98,7 +165,7 @@ calc: ; parse an input string (si) and prints value. | example string: "1 + 5" -
     .print:
         mov ax, cx
         mov si, calc_itoaBuf
-        mov bx, 6
+        mov bx, 7
         call itoa
 
         mov si, calc_itoaBuf
@@ -106,6 +173,26 @@ calc: ; parse an input string (si) and prints value. | example string: "1 + 5" -
         sub si, di
 
         mov ah, 0x01
+        int 0x80
+
+        mov ah, 0x02
+        int 0x80
+
+        ret
+
+    .inv:
+        mov si, calc_invNum
+        mov ah, 0x01
+        int 0x80
+
+        mov ah, 0x02
+        int 0x80
+
+        ret
+
+    .divZeroErr:
+        mov si, calc_divByZero
+        mov ah, 0x01 
         int 0x80
 
         mov ah, 0x02

@@ -90,11 +90,23 @@ atoi: ; convert ascii string into 16-bit integer. | usage: si = null-terminated 
         ret
 
 itoa: ; convert 16-bit integer into ascii string. | usage: si = buffer, ax = 16-bit int, bx = buffer length | di = bytes converted.
+    mov [itoa_isNeg], 0
+
     xor di, di ; counter 
     mov cx, 10 ; constant for division
 
     push bx ; save value of bx
     dec bx ; reserve single character for null-termination.
+
+    cmp ax, 0 
+    je .returnZeroChar
+
+    jl .neg
+    jmp .loop
+
+    .neg:
+        neg ax
+        mov [itoa_isNeg], 1 
 
     .loop:
         xor dx, dx ; clear for DX:AX division.
@@ -113,6 +125,23 @@ itoa: ; convert 16-bit integer into ascii string. | usage: si = buffer, ax = 16-
         jmp .loop
 
         .end:
-            pop bx 
-            mov byte [si + bx], 0 ; null-terminate
-            ret 
+            cmp byte [itoa_isNeg], 1
+            jne .nullTerm
+
+            inc di
+            mov byte [si + bx], '-'
+
+            .nullTerm:
+                pop bx 
+                mov byte [si + bx], 0 ; null-terminate
+                ret 
+    
+    .returnZeroChar:
+        mov byte [si + bx], 0
+        dec bx 
+        mov byte [si + bx], 48 ; '0'
+        add di, 2
+
+        pop bx
+
+        ret

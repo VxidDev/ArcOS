@@ -61,18 +61,22 @@ kernel_main:
 %include "core/cursor.s" ; provides mvcrsr, getcrsr
 %include "core/input.s"  ; provides getchar 
 %include "core/shell.s"  ; provides userInput, parseInput
-%include "core/utils.s"  ; provides strhex 
+%include "core/utils.s"  ; provides strhex , atoi , itoa
 %include "core/system.s" ; provides shtdwn 
 %include "core/syscall.s" ; provides syscallHandler
 
 ; removing this breaks parseInput
 %include "progs/calc.s" ; provides calc
 
+itoa_isNeg: db 0
+
 calc_firstNum: dw 0
 calc_secondNum: dw 0
 calc_operator: db 0
 calc_unknownOper: db "calc: Unknown operation!", 0
-calc_itoaBuf: times 7 db 0 ; buffer for 5 characters and null-byte.
+calc_itoaBuf: times 8 db 0 ; buffer for 6 characters, null-byte and additional byte for safety.
+calc_invNum: db "calc: invalid number!", 0
+calc_divByZero: db "calc: division by zero is not allowed.", 0
 
 prompt: db "ArcOS > ", 0
 promptLen equ $ - prompt
