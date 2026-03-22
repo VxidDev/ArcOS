@@ -7,7 +7,10 @@
 *   **16-bit Bootloader:** Boots directly from a floppy or hard disk image.
 *   **Interactive Shell:** A simple command-line interface for user interaction.
 *   **Syscall-based API:** A basic set of system calls for core functionalities.
-*   **Built-in Commands:** Includes essential commands like `echo`, `clear`, `color`, `shutdown`, `reboot`, and `calc` (a simple calculator).
+*   **Built-in Commands:** Includes essential commands like `echo`, `clear`, `color`, `shutdown`, `reboot`, and the following programs:
+    *   `calc`: A simple calculator.
+    *   `time`: A program to get the current time.
+    *   `tzconfig`: A program to configure the time zone.
 
 ## License
 
@@ -48,43 +51,15 @@ ArcOS provides a set of system calls to interact with the operating system. To i
 
 ## Adding a Shell Command
 
-To add a new command to the ArcOS shell, you need to modify `main.s` and `core/shell.s`. Here's a step-by-step guide:
+Adding a new command to the ArcOS shell involves creating a new program file and integrating it with the existing shell. Here is a step-by-step guide:
 
-1.  **Declare the command string in `main.s`:**
-    Add a new `db` directive with your command name and a corresponding `equ` for its length.
-
-    ```assembly
-    ; in main.s
-    my_command: db "mycmd", 0
-    my_commandLen equ $ - my_command
-    ```
-
-2.  **Add the command parsing logic in `core/shell.s`:**
-    In `parseInput`, add a new section to check for your command. You can follow the pattern of the existing commands.
+1.  **Create your program file in `progs/`:**
+    Create a new assembly file in the `progs/` directory (e.g., `my_program.s`). This file will contain the logic for your command. The entry point of your program should be a label (e.g., `my_program:`).
 
     ```assembly
-    ; in core/shell.s, within parseInput, after the last command
-    .skipReboot: ; or the label of the last command check
-
-    xor bx, bx
-    mov si, my_command
-
-    .myCommandLoop:
-        cmp bx, my_commandLen
-        je .execMyCommand
-
-        cmp [inputBuf + bx], 0
-        je .skipMyCommand
-
-        mov al, [si + bx]
-        cmp al, [inputBuf + bx]
-        jne .skipMyCommand
-
-        inc bx
-        jmp .myCommandLoop
-
-    .execMyCommand:
-        ; Your command's logic goes here
+    ; in progs/my_program.s
+    my_program:
+        ; Your command's logic goes here.
         ; For example, to print a message:
         mov si, my_message
         mov bl, 0x0F
@@ -92,17 +67,49 @@ To add a new command to the ArcOS shell, you need to modify `main.s` and `core/s
         call printnl
         ret
 
-    .skipMyCommand:
-        ; This label is where the next command check would start,
-        ; or the "command not found" message if this is the last one.
+    my_message: db "This is my new program!", 0
     ```
 
-3.  **Add any required data:**
-    If your command needs to print a message, add the string to `main.s`:
+2.  **Declare the command string and include your program in `main.s`:**
+    In `main.s`, add a `db` directive for your command name and an `equ` for its length. Also, include your new program file using `%include`.
 
     ```assembly
     ; in main.s
-    my_message: db "This is my new command!", 0
+
+    ; ... other command definitions
+    myProgramCmd: db "myprog", 0
+    myProgramCmdLen equ $ - myProgramCmd
+
+    ; ... other includes
+    %include "progs/my_program.s"
+    ```
+
+3.  **Add the command parsing logic in `core/shell.s`:**
+    In the `parseInput` function in `core/shell.s`, add a new section to check for your command and call its entry point.
+
+    ```assembly
+    ; in core/shell.s, within parseInput, before the "command not found" part
+
+    ; ... after the last command check
+    .skipTz: ; or the label of the last command check
+
+    mov si, myProgramCmd
+    mov di, inputBuf
+    mov bx, myProgramCmdLen
+
+    call memcmp_n
+
+    cmp al, 0
+    je .skipMyProgram
+
+    .execMyProgram:
+        ; check for arguments, etc.
+        call my_program
+        ret
+
+    .skipMyProgram:
+        ; This label is where the next command check would start,
+        ; or the "command not found" message if this is the last one.
     ```
 
 ## File Structure
@@ -112,6 +119,8 @@ The project is organized into the following files:
 *   `boot.s`: The bootloader.
 *   `main.s`: The main kernel file, containing the entry point and the main shell loop.
 *   `makefile`: The build script for NASM.
+*   `README.md`: This file.
+*   `calc.md`, `time.md`, `tzconfig.md`: Documentation for the programs.
 *   `core/`: A directory for the core components of the OS.
     *   `cursor.s`: Functions for cursor manipulation.
     *   `input.s`: Keyboard input functions.
@@ -121,4 +130,6 @@ The project is organized into the following files:
     *   `system.s`: System-level functions like shutdown and reboot.
     *   `utils.s`: Utility functions.
 *   `progs/`: A directory for user programs.
-    *   `calc.s`: A simple calculator program implemented as a shell command.
+    *   `calc.s`: A simple calculator program.
+    *   `time.s`: A program to get the current time.
+    *   `tzconfig.s`: A program to configure the time zone.
