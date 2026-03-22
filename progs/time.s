@@ -71,16 +71,8 @@ time:
         call .zeroPadding
 
         call itoa 
-
-        add si, bx 
-        sub si, di 
-
-        mov ah, 0x01
-        int 0x80
-
-        mov si, time_separator
-        mov ah, 0x01
-        int 0x80
+        call .printConverted
+        call .printSeparator
 
         mov si, time_minutesItoaBuf
         mov ax, [time_minutes]
@@ -88,29 +80,15 @@ time:
         call .zeroPadding
 
         call itoa
-
-        add si, bx 
-        sub si, di 
-
-        mov ah, 0x01 
-        int 0x80
-
-        mov si, time_separator
-        mov ah, 0x01
-        int 0x80 
+        call .printConverted
+        call .printSeparator
 
         mov si, time_secondsItoaBuf
         mov ax, [time_seconds]
 
         call .zeroPadding
-
         call itoa 
-
-        add si, bx 
-        sub si, di 
-
-        mov ah, 0x01 
-        int 0x80
+        call .printConverted
 
         ret
 
@@ -128,5 +106,21 @@ time:
 
             .skipPadding:
                 ret 
+
+        .printSeparator:
+            mov si, time_separator
+            mov ah, 0x01
+            int 0x80 
+
+            ret
+
+        .printConverted:
+            add si, bx 
+            sub si, di 
+
+            mov ah, 0x01 
+            int 0x80
+
+            ret
 
     ret

@@ -1,6 +1,6 @@
 # Time
 
-A simple command that returns UTC with `tz_offset`.
+A simple command that returns UTC time with `tz_offset`.
 
 ## Example:
 

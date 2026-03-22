@@ -305,6 +305,41 @@ parseInput: ; parses user input and executes command based on it.
         ret 
 
     .skipTime:
+
+    xor bx, bx 
+    mov si, tzCmd
+
+    .tzLoop:
+        cmp bx, tzCmdLen 
+        je .execTz
+
+        cmp [inputBuf + bx], 0 ; check if null-terminated
+        je .skipTz  
+
+        mov al, [si + bx] ; char = *(si + cx) 
+        cmp al, [inputBuf + bx]
+
+        jne .skipTz 
+
+        inc bx
+        jmp .tzLoop  
+
+    .execTz:
+        mov si, inputBuf
+        add si, tzCmdLen    
+
+        cmp byte [si], 0   
+        je .defaultTz 
+        
+        call tzconfig
+
+        ret 
+
+    .defaultTz:
+        mov [tz_offset], 0
+        ret
+
+    .skipTz:
             
     mov si, commandNotFound
     mov bl, 0x04

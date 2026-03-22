@@ -68,6 +68,7 @@ kernel_main:
 ; removing this breaks parseInput
 %include "progs/calc.s" ; provides calc
 %include "progs/time.s" ; provides time
+%include "progs/tzconfig.s" ; provides tzconfig
 
 itoa_isNeg: db 0
 
@@ -116,6 +117,10 @@ time_secondsItoaBuf: times 5 db 0
 time_separator: db ':', 0
 time_zero: db '0', 0, 0 ; additional byte for safety
 
+tzCmd: db "tzconfig"
+tzCmdLen equ $ - tzCmd
+
+tz_invOffset: db "tzconfig: invalid offset!", 0
 tz_offset: db 0
 
 commandNotFound: db "Command not found!", 0
