@@ -44,24 +44,34 @@ kernel_main:
     call printnl
     call printnl
 
-.shell:
-    mov si, prompt
-    mov bl, 0x0B 
-    call printcs
+    mov si, echo 
+    mov di, echo
 
-    mov si, inputBuf
+    call streq
 
-    call userInput
-    call printnl
-    call parseInput 
+    cmp al, 0
+    jne .shell 
 
-    jmp .shell
+    jmp $
+
+    .shell:
+        mov si, prompt
+        mov bl, 0x0B 
+        call printcs
+
+        mov si, inputBuf
+
+        call userInput
+        call printnl
+        call parseInput 
+
+        jmp .shell
 
 %include "core/output.s" ; provides prints, printc, printcs, printnl, clears 
 %include "core/cursor.s" ; provides mvcrsr, getcrsr
 %include "core/input.s"  ; provides getchar 
 %include "core/shell.s"  ; provides userInput, parseInput
-%include "core/utils.s"  ; provides strhex, atoi, itoa, memcmp_n
+%include "core/utils.s"  ; provides strhex, atoi, itoa, memcmp_n, strlen, streq
 %include "core/system.s" ; provides shtdwn 
 %include "core/syscall.s" ; provides syscallHandler
 

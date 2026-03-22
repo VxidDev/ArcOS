@@ -146,7 +146,7 @@ itoa: ; convert 16-bit integer into ascii string. | usage: si = buffer, ax = 16-
 
         ret
 
-memcmp_n: ; Compare BX bytes at [si] and [di], and returns al = 1 if equal, al = 0 otherwise. | usage: si = pointer 1, di = pointer 2, bx = amount of bytes to compare.
+memcmp_n: ; Compare BX bytes at [si] and [di], returns al = 1 if equal, al = 0 otherwise. | usage: si = pointer 1, di = pointer 2, bx = amount of bytes to compare.
     mov cx, bx
     xor bx, bx   
 
@@ -168,4 +168,57 @@ memcmp_n: ; Compare BX bytes at [si] and [di], and returns al = 1 if equal, al =
 
     .false:
         mov al, 0
+        ret
+
+strlen: ; count number of characters in string [si] and returns number of bytes in ax. | usage: si = null-terminated string
+    cld ; clear direction flag
+    xor cx, cx 
+
+    .loop: 
+        lodsb
+
+        test al, al ; check if null-byte
+        je .end
+
+        inc cx 
+        jmp .loop 
+
+        .end:
+            mov ax, cx
+            ret 
+
+streq: ; compare 2 null-terminated strings, returns al = 1 if equal, al = 0 otherwise. | usage: si = pointer 1, di = pointer 2
+    xor bx, bx ; counter 
+
+    .loop:
+        mov al, byte [si + bx] ; *(si + bx) | si[i]
+        mov ah, byte [di + bx] ; *(di + bx) | di[i]
+
+        cmp al, 0
+        je .nullByte
+
+        cmp ah, 0
+        je .nullByte
+ 
+        cmp al, ah ; si[i] == di[i]
+        jne .neq 
+
+        inc bx 
+        jmp .loop
+
+    .nullByte:
+        cmp al, 0
+        jne .neq 
+
+        cmp ah, 0
+        jne .neq 
+
+        jmp .eq
+
+    .eq:
+        mov al, 1
         ret 
+
+    .neq:
+        mov al, 0
+        ret   

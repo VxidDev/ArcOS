@@ -174,7 +174,10 @@ parseInput: ; parses user input and executes command based on it.
     mov di, inputBuf 
     mov bx, rebootLen
 
-    call memcmp_n   
+    call memcmp_n 
+
+    cmp al, 0
+    je .skipReboot  
 
     .execReboot:
         mov si, inputBuf
