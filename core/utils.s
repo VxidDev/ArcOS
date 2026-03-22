@@ -145,3 +145,27 @@ itoa: ; convert 16-bit integer into ascii string. | usage: si = buffer, ax = 16-
         pop bx
 
         ret
+
+memcmp_n: ; Compare BX bytes at [si] and [di], and returns al = 1 if equal, al = 0 otherwise. | usage: si = pointer 1, di = pointer 2, bx = amount of bytes to compare.
+    mov cx, bx
+    xor bx, bx   
+
+    .loop: 
+        cmp bx, cx  
+        je .true
+
+        mov al, [si + bx] ; char = *(si + bx) 
+        cmp al, [di + bx] ; char = *(di + bx)
+
+        jne .false 
+
+        inc bx
+        jmp .loop 
+
+    .true:
+        mov al, 1 
+        ret 
+
+    .false:
+        mov al, 0
+        ret 

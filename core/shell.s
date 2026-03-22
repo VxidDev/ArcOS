@@ -63,94 +63,67 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
 
 parseInput: ; parses user input and executes command based on it.
     mov si, echo
-    xor bx, bx  
+    mov di, inputBuf 
+    mov bx, echoLen
 
-    .echoLoop:
-        cmp bx, echoLen 
-        je .execEcho
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipEcho
+    cmp al, 0
+    je .skipEcho
 
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
+    .execEcho:
+        mov si, inputBuf
+        add si, echoLen
 
-        jne .skipEcho
+        cmp byte [si], 0 ; check if end 
+        je .nl 
 
-        inc bx
-        jmp .echoLoop  
+        cmp byte [si], ' ' ; check if space 
+        jne .skipEcho 
 
-        .execEcho:
-            mov si, inputBuf
-            add si, echoLen
+        inc si
 
-            cmp byte [si], 0 ; check if end 
-            je .nl 
+        mov ah, 0x01
+        int 0x80
 
-            cmp byte [si], ' ' ; check if space 
-            jne .skipEcho 
-
-            inc si
-
-            mov ah, 0x01
+        .nl:
+            mov ah, 0x02 
             int 0x80
 
-            .nl:
-                mov ah, 0x02 
-                int 0x80
+        ret 
 
-            ret 
+    .skipEcho:
 
-        .skipEcho:
-
-    xor bx, bx 
     mov si, clear
+    mov di, inputBuf 
+    mov bx, clearLen
 
-    .clearLoop:
-        cmp bx, clearLen 
-        je .execClear
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipClear
+    cmp al, 0
+    je .skipClear
 
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
+    .execClear:
+        mov si, inputBuf
+        add si, clearLen
 
-        jne .skipClear
+        cmp byte [si], 0 ; check if null-terminated 
+        jne .skipClear 
 
-        inc bx
-        jmp .clearLoop  
+        call clears 
 
-        .execClear:
-            mov si, inputBuf
-            add si, clearLen
+        ret 
 
-            cmp byte [si], 0 ; check if null-terminated 
-            jne .skipClear 
-
-            call clears 
-
-            ret 
-
-        .skipClear:
+    .skipClear:
     
-    xor bx, bx 
-    mov si, color
+    mov si, color 
+    mov di, inputBuf 
+    mov bx, colorLen
 
-    .colorLoop:
-        cmp bx, colorLen 
-        je .execColor
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipColor 
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipColor
-
-        inc bx
-        jmp .colorLoop  
+    cmp al, 0 
+    je .skipColor
 
     .execColor:
         mov si, inputBuf
@@ -174,23 +147,14 @@ parseInput: ; parses user input and executes command based on it.
 
     .skipColor:
 
-    xor bx, bx 
     mov si, shutdown
+    mov di, inputBuf 
+    mov bx, shutdownLen
 
-    .shutdownLoop:
-        cmp bx, shutdownLen
-        je .execShutdown
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipShutdown 
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipShutdown
-
-        inc bx
-        jmp .shutdownLoop  
+    cmp al, 0 
+    je .skipShutdown
 
     .execShutdown:
         mov si, inputBuf
@@ -206,23 +170,11 @@ parseInput: ; parses user input and executes command based on it.
 
     .skipShutdown:
 
-    xor bx, bx 
-    mov si, reboot 
+    mov si, reboot
+    mov di, inputBuf 
+    mov bx, rebootLen
 
-    .rebootLoop:
-        cmp bx, rebootLen
-        je .execReboot
-
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipReboot 
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipReboot 
-
-        inc bx
-        jmp .rebootLoop  
+    call memcmp_n   
 
     .execReboot:
         mov si, inputBuf
@@ -238,23 +190,14 @@ parseInput: ; parses user input and executes command based on it.
 
     .skipReboot:
 
-    xor bx, bx 
     mov si, calcCmd
+    mov di, inputBuf 
+    mov bx, calcLen
 
-    .calcLoop:
-        cmp bx, calcLen
-        je .execCalc 
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipCalc 
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipCalc  
-
-        inc bx
-        jmp .calcLoop  
+    cmp al, 0
+    je .skipCalc
 
     .execCalc:
         mov si, inputBuf
@@ -274,23 +217,14 @@ parseInput: ; parses user input and executes command based on it.
 
     .skipCalc:
 
-    xor bx, bx 
-    mov si, timeCmd
+    mov si, timeCmd 
+    mov di, inputBuf 
+    mov bx, timeLen
 
-    .timeLoop:
-        cmp bx, timeLen 
-        je .execTime
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipTime  
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipTime 
-
-        inc bx
-        jmp .timeLoop  
+    cmp al, 0
+    je .skipTime
 
     .execTime:
         mov si, inputBuf
@@ -306,23 +240,14 @@ parseInput: ; parses user input and executes command based on it.
 
     .skipTime:
 
-    xor bx, bx 
     mov si, tzCmd
+    mov di, inputBuf 
+    mov bx, tzCmdLen
 
-    .tzLoop:
-        cmp bx, tzCmdLen 
-        je .execTz
+    call memcmp_n   
 
-        cmp [inputBuf + bx], 0 ; check if null-terminated
-        je .skipTz  
-
-        mov al, [si + bx] ; char = *(si + cx) 
-        cmp al, [inputBuf + bx]
-
-        jne .skipTz 
-
-        inc bx
-        jmp .tzLoop  
+    cmp al, 0
+    je .skipTz
 
     .execTz:
         mov si, inputBuf

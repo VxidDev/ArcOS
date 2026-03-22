@@ -61,7 +61,7 @@ kernel_main:
 %include "core/cursor.s" ; provides mvcrsr, getcrsr
 %include "core/input.s"  ; provides getchar 
 %include "core/shell.s"  ; provides userInput, parseInput
-%include "core/utils.s"  ; provides strhex , atoi , itoa
+%include "core/utils.s"  ; provides strhex, atoi, itoa, memcmp_n
 %include "core/system.s" ; provides shtdwn 
 %include "core/syscall.s" ; provides syscallHandler
 
