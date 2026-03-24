@@ -95,7 +95,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipEcho:
 
     mov si, clear
-    mov di, inputBuf 
     mov bx, clearLen
 
     call memcmp_n   
@@ -117,7 +116,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipClear:
     
     mov si, color 
-    mov di, inputBuf 
     mov bx, colorLen
 
     call memcmp_n   
@@ -148,7 +146,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipColor:
 
     mov si, shutdown
-    mov di, inputBuf 
     mov bx, shutdownLen
 
     call memcmp_n   
@@ -171,7 +168,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipShutdown:
 
     mov si, reboot
-    mov di, inputBuf 
     mov bx, rebootLen
 
     call memcmp_n 
@@ -194,7 +190,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipReboot:
 
     mov si, calcCmd
-    mov di, inputBuf 
     mov bx, calcLen
 
     call memcmp_n   
@@ -221,7 +216,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipCalc:
 
     mov si, timeCmd 
-    mov di, inputBuf 
     mov bx, timeLen
 
     call memcmp_n   
@@ -244,7 +238,6 @@ parseInput: ; parses user input and executes command based on it.
     .skipTime:
 
     mov si, tzCmd
-    mov di, inputBuf 
     mov bx, tzCmdLen
 
     call memcmp_n   
@@ -268,6 +261,32 @@ parseInput: ; parses user input and executes command based on it.
         ret
 
     .skipTz:
+
+    mov si, sleepCmd
+    mov bx, sleepLen
+
+    call memcmp_n
+
+    cmp al, 0 
+    je .skipSleep
+
+    .execSleep:
+        mov si, inputBuf
+        add si, sleepLen
+
+        cmp byte [si], 0
+        je .defaultSleep
+
+        cmp byte [si], ' '
+        jne .skipSleep
+
+        call sleep_cmd
+        ret 
+
+    .defaultSleep:
+        ret
+
+    .skipSleep:
             
     mov si, commandNotFound
     mov bl, 0x04

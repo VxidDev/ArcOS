@@ -44,16 +44,6 @@ kernel_main:
     call printnl
     call printnl
 
-    mov si, echo 
-    mov di, echo
-
-    call streq
-
-    cmp al, 0
-    jne .shell 
-
-    jmp $
-
     .shell:
         mov si, prompt
         mov bl, 0x0B 
@@ -79,6 +69,7 @@ kernel_main:
 %include "progs/calc.s" ; provides calc
 %include "progs/time.s" ; provides time
 %include "progs/tzconfig.s" ; provides tzconfig
+%include "progs/sleep.s" ; provides sleep_cmd
 
 itoa_isNeg: db 0
 

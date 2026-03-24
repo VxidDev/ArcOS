@@ -222,3 +222,29 @@ streq: ; compare 2 null-terminated strings, returns al = 1 if equal, al = 0 othe
     .neq:
         mov al, 0
         ret   
+
+sleep: ; ax = ticks
+    mov di, ax 
+
+    mov ah, 0x00
+    int 0x1A
+
+    add dx, di
+    adc cx, 0
+
+    mov bx, dx
+    mov bp, cx
+
+    .loop:
+        mov ah, 0x00
+        int 0x1A
+
+        cmp cx, bp
+        jb .loop
+        ja .done
+
+        cmp dx, bx
+        jb .loop
+
+    .done:
+        ret
