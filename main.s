@@ -27,18 +27,22 @@ kernel_main:
 
     mov si, greetingPt1
     mov bl, 0x0F
+    add bl, [currentBg]
     call printcs
 
     mov si, greetingPt2
     mov bl, 0x0B
+    add bl, [currentBg]
     call printcs 
 
     mov si, greetingPt3
     mov bl, 0x03
+    add bl, [currentBg]
     call printcs 
 
     mov si, greetingPt4 
     mov bl, 0x0F
+    add bl, [currentBg]
     call printcs
 
     call printnl
@@ -46,7 +50,8 @@ kernel_main:
 
     .shell:
         mov si, prompt
-        mov bl, 0x0B 
+        mov bl, 0x0B
+        add bl, [currentBg] 
         call printcs
 
         mov si, inputBuf
@@ -70,6 +75,7 @@ kernel_main:
 %include "progs/time.s" ; provides time
 %include "progs/tzconfig.s" ; provides tzconfig
 %include "progs/sleep.s" ; provides sleep_cmd
+%include "progs/bgconfig.s" ; provides bgconfig
 
 itoa_isNeg: db 0
 

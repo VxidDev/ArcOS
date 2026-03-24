@@ -22,6 +22,7 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
         mov ah, 09h
         mov bh, 0
         mov bl, [currColor]
+        add bl, [currentBg]
         mov cx, 1
         int 10h
 
@@ -55,6 +56,7 @@ userInput: ; take input from user. limited to 32 bytes. | si = buffer
             mov al, ' '
             mov bh, 0
             mov bl, [currColor]
+            add bl, [currentBg]
             mov cx, 1
             int 10h
 
@@ -287,9 +289,40 @@ parseInput: ; parses user input and executes command based on it.
         ret
 
     .skipSleep:
+
+    mov si, bgconfigCmd
+    mov bx, bgconfigCmdLen
+
+    call memcmp_n
+
+    cmp al, 0
+    je .skipBgconfig
+    
+    .execBgconfig:
+        mov si, inputBuf
+        add si, bgconfigCmdLen
+
+        cmp byte [si], 0
+        je .defaultBgconfig
+
+        cmp byte [si], ' '
+        jne .skipBgconfig
+
+        inc si 
+
+        call bgconfig
+        ret
+
+    .defaultBgconfig:
+        mov [currentBg], 0x00 ; black 
+        call clears
+        ret 
+
+    .skipBgconfig:
             
     mov si, commandNotFound
     mov bl, 0x04
+    add bl, [currentBg]
 
     call printcs
     call printnl
