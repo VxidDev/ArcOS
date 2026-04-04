@@ -68,6 +68,9 @@ parseInput: ; parses user input and executes command based on it.
     mov di, inputBuf 
     mov bx, echoLen
 
+    cmp byte [di], 0
+    je .ret
+
     call memcmp_n   
 
     cmp al, 0
@@ -327,4 +330,5 @@ parseInput: ; parses user input and executes command based on it.
     call printcs
     call printnl
 
-    ret   
+    .ret:
+        ret   
