@@ -1,4 +1,5 @@
-# ArcOS
+# ArcOS - unsupported
+
 
 **ArcOS** is a lightweight, 16-bit command-line operating system written entirely in x86 assembly for the IBM PC and compatible systems. 
 
