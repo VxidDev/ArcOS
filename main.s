@@ -12,7 +12,9 @@ kernel_main:
     mov ss, ax
     mov sp, 0x8000 
 
-    xor ax, ax
+    mov [kernel_bootdrive], dl ; save boot drive from BIOS
+
+    mov ax, 0x0000
     mov ds, ax
 
     mov word [0x80 * 4], syscallHandler
@@ -24,6 +26,8 @@ kernel_main:
     sti ; enable interrupts
 
     call clears
+
+    call fat16_init
 
     mov si, greetingPt1
     mov bl, 0x0F
@@ -62,28 +66,37 @@ kernel_main:
 
         jmp .shell
 
-%include "core/output.s" ; provides prints, printc, printcs, printnl, clears 
-%include "core/cursor.s" ; provides mvcrsr, getcrsr
-%include "core/input.s"  ; provides getchar 
-%include "core/shell.s"  ; provides userInput, parseInput
-%include "core/utils.s"  ; provides strhex, atoi, itoa, memcmp_n, strlen, streq
-%include "core/system.s" ; provides shtdwn 
-%include "core/syscall.s" ; provides syscallHandler
+%include "core/output.s"
+%include "core/cursor.s"
+%include "core/input.s"
+%include "core/shell.s"
+%include "core/utils.s"
+%include "core/system.s"
+%include "core/syscall.s"
+%include "core/disk.s"
+%include "core/fat16_bpb.s"
+%include "core/fat16.s"
+%include "core/fat16_dir.s"
+%include "core/fat16_file.s"
+%include "core/shell_fat16.s"
 
 ; removing this breaks parseInput
-%include "progs/calc.s" ; provides calc
-%include "progs/time.s" ; provides time
-%include "progs/tzconfig.s" ; provides tzconfig
-%include "progs/sleep.s" ; provides sleep_cmd
-%include "progs/bgconfig.s" ; provides bgconfig
+%include "progs/calc.s"
+%include "progs/time.s"
+%include "progs/tzconfig.s"
+%include "progs/sleep.s"
+%include "progs/bgconfig.s"
+
+kernel_bootdrive: db 0
 
 itoa_isNeg: db 0
+itoa_buf: times 8 db 0
 
 calc_firstNum: dw 0
 calc_secondNum: dw 0
 calc_operator: db 0
 calc_unknownOper: db "calc: Unknown operation!", 0
-calc_itoaBuf: times 8 db 0 ; buffer for 6 characters, null-byte and additional byte for safety.
+calc_itoaBuf: times 8 db 0
 calc_invNum: db "calc: invalid number!", 0
 calc_divByZero: db "calc: division by zero is not allowed.", 0
 
@@ -122,7 +135,7 @@ time_hoursItoaBuf: times 5 db 0
 time_minutesItoaBuf: times 5 db 0
 time_secondsItoaBuf: times 5 db 0 
 time_separator: db ':', 0
-time_zero: db '0', 0, 0 ; additional byte for safety
+time_zero: db '0', 0, 0
 
 tzCmd: db "tzconfig"
 tzCmdLen equ $ - tzCmd
@@ -136,3 +149,44 @@ greetingPt1: db "Welcome to ", 0
 greetingPt2: db "Arc", 0
 greetingPt3: db "OS", 0
 greetingPt4: db "!", 0
+
+lsCmd: db "ls"
+lsCmdLen equ $ - lsCmd
+
+catCmd: db "cat"
+catCmdLen equ $ - catCmd
+
+touchCmd: db "touch"
+touchCmdLen equ $ - touchCmd
+
+rmCmd: db "rm"
+rmCmdLen equ $ - rmCmd
+
+mkdirCmd: db "mkdir"
+mkdirCmdLen equ $ - mkdirCmd
+
+runCmd: db "run"
+runCmdLen equ $ - runCmd
+
+bpb_buffer: times 512 db 0
+bpb_sectors_per_cluster: db 0
+bpb_reserved_sectors: dw 0
+bpb_num_fats_copy: db 0
+bpb_max_root_entries: dw 0
+bpb_total_sectors: dw 0
+bpb_sectors_per_fat: dw 0
+bpb_sectors_per_track: dw 0
+bpb_num_heads: dw 0
+
+fat_start: dw 0
+root_dir_start: dw 0
+data_start: dw 0
+fat_buffer: times 16384 db 0
+sector_buffer: times 512 db 0
+cluster_buffer: times 512 db 0
+
+current_dir_cluster: dw 0
+current_path: times 32 db 0
+dir_marker: db "<DIR>", 0
+space_str: db " ", 0
+temp_name: times 13 db 0

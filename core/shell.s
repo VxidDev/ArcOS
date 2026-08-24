@@ -1,67 +1,67 @@
 userInput: ; take input from user. limited to 32 bytes. | si = buffer
-    mov di, si 
-    add di, 32
+  mov di, si 
+  add di, 32
 
-    call getcrsr
+  call getcrsr
 
-    .loop:
-        call getchar
+  .loop:
+    call getchar
 
-        cmp al, 0x0D ; check if enter
-        je .enter
+    cmp al, 0x0D ; check if enter
+    je .enter
 
-        cmp al, 0x08 ; check if backspace
-        je .backspace 
+    cmp al, 0x08 ; check if backspace
+    je .backspace 
 
-        cmp si, di ; check if user had inputted 32 bytes
-        je .skip  
+    cmp si, di ; check if user had inputted 32 bytes
+    je .skip  
 
-        mov byte [si], al ; store character
-        inc si 
+    mov byte [si], al ; store character
+    inc si 
 
-        mov ah, 09h
-        mov bh, 0
-        mov bl, [currColor]
-        add bl, [currentBg]
-        mov cx, 1
-        int 10h
+    mov ah, 09h
+    mov bh, 0
+    mov bl, [currColor]
+    add bl, [currentBg]
+    mov cx, 1
+    int 10h
 
-        inc dl 
-        call mvcrsr
+    inc dl 
+    call mvcrsr
 
-        .skip:  
+    .skip:  
 
-        jmp .loop
+    jmp .loop
 
-        .enter:
-            mov byte [si] , 0 ; null-terminate
-            ret   
+    .enter:
+      mov byte [si] , 0 ; null-terminate
+      ret   
 
-        .backspace:
-            mov ax, di
-            sub ax, 32          
-            cmp si, ax
+    .backspace:
+      mov ax, di
+      sub ax, 32          
+      cmp si, ax
 
-            je .skipremoval     
+      je .skipremoval     
 
-            dec si              ; move buffer pointer back
+      dec si              ; move buffer pointer back
 
-            ; move cursor back
-            call getcrsr
-            dec dl
-            call mvcrsr
+      ; move cursor back
+      call getcrsr
+      dec dl
+      call mvcrsr
 
-            ; erase character on screen
-            mov ah, 09h
-            mov al, ' '
-            mov bh, 0
-            mov bl, [currColor]
-            add bl, [currentBg]
-            mov cx, 1
-            int 10h
+      ; erase character on screen
+      mov ah, 09h
+      mov al, ' '
+      mov bh, 0
+      mov bl, [currColor]
+      add bl, [currentBg]
+      mov cx, 1
+      int 10h
 
-        .skipremoval:
-            jmp .loop
+    .skipremoval:
+      jmp .loop
 
 parseInput: ; parses user input and executes command based on it.
     mov si, echo
@@ -322,7 +322,61 @@ parseInput: ; parses user input and executes command based on it.
         ret 
 
     .skipBgconfig:
-            
+
+    mov si, lsCmd
+    mov bx, lsCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipLs
+    call cmd_ls
+    ret
+    .skipLs:
+
+    mov si, catCmd
+    mov bx, catCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipCat
+    call cmd_cat
+    ret
+    .skipCat:
+
+    mov si, touchCmd
+    mov bx, touchCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipTouch
+    call cmd_touch
+    ret
+    .skipTouch:
+
+    mov si, rmCmd
+    mov bx, rmCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipRm
+    call cmd_rm
+    ret
+    .skipRm:
+
+    mov si, mkdirCmd
+    mov bx, mkdirCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipMkdir
+    call cmd_mkdir_cmd
+    ret
+    .skipMkdir:
+
+    mov si, runCmd
+    mov bx, runCmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipRun
+    call cmd_run
+    ret
+    .skipRun:
+
     mov si, commandNotFound
     mov bl, 0x04
     add bl, [currentBg]
@@ -331,4 +385,4 @@ parseInput: ; parses user input and executes command based on it.
     call printnl
 
     .ret:
-        ret   
+        ret
