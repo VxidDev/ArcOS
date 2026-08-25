@@ -24,6 +24,7 @@ Reference for kernel-internal functions. These are callable from code that is `%
 | Function | Usage | Description |
 |----------|-------|-------------|
 | `getchar` | Returns `AL` = character | Blocking keyboard read. Waits for a keypress via INT 16h AH=00h. |
+| `getline` | `SI` = buffer, `BX` = max length. Returns `AX` = bytes read. | Read a line of text with backspace editing. Null-terminates the result. |
 | `userInput` | `SI` = buffer (32 bytes) | Full line-editing input routine. Handles backspace, displays typed characters, null-terminates on Enter. |
 
 ## Utility (`core/utils.s`)
@@ -62,7 +63,8 @@ Reference for kernel-internal functions. These are callable from code that is `%
 
 | Function | Usage | Description |
 |----------|-------|-------------|
-| `fat16_file_read` | `SI` = 8.3 name, `BX` = buffer offset, `CX` = max bytes. Returns `AX` = bytes read (0 = not found). | Read a file from the current directory into a buffer. |
+| `fat16_file_read` | `SI` = 8.3 name, `BX` = buffer offset, `CX` = max bytes. Returns `AX` = bytes read (0 = not found). | Read a file from the current directory into a buffer. Writes to `es:[bx]` — set `es` to the target segment before calling. |
+| `fat16_file_write` | `SI` = 8.3 name, `BX` = buffer offset, `CX` = byte count. Returns `AX` = bytes written (0 = fail). | Write data to a file, creating or overwriting it. Reads from `es:[bx]` — set `es` to the source segment before calling. |
 | `fat16_file_create` | `SI` = 8.3 name. Returns `AL` = 1 success, 0 = already exists. | Create a new empty file in the current directory. |
 | `fat16_file_delete` | `SI` = 8.3 name. Returns `AL` = 1 success, 0 = not found. | Delete a file and free its clusters. |
 | `fat16_mkdir` | `SI` = 8.3 name. Returns `AL` = 1 success, 0 = fail. | Create a new directory. |

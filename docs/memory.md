@@ -21,18 +21,16 @@ ArcOS runs in 16-bit real mode. All addresses are segment:offset pairs (physical
 0x7E00  ├──────────────────────────┤
         │  Boot read buffer        │  512 bytes (FAT sectors, root dir)
 0x8000  ├──────────────────────────┤
-        │  Kernel                  │  Code, data, BSS, stack
+        │  Kernel                  │  Code, data, BSS (~23 KB)
         │  0x0800:0x0000           │
-        │                          │  Code + data
         │         ...              │
-        │                          │  Stack (grows down from 0x8000)
+0xDA23  ├──────────────────────────┤
+        │  User programs           │  Loaded by `run` command
+        │  0x0E00:0x0000           │  (~8 KB available)
+        │         ...              │
 0x10000 ├──────────────────────────┤
-        │  User program space      │  32 KB
-        │  0x0900:0x0000           │  Loaded by `run` command
-        │                          │
-0x18000 ├──────────────────────────┤
-        │  Free                    │
-        │                          │
+        │  Kernel stack            │  Grows down (32 KB)
+        │  0x0800:0x8000           │
 ```
 
 ## Key Addresses
@@ -44,7 +42,7 @@ ArcOS runs in 16-bit real mode. All addresses are segment:offset pairs (physical
 | `0x7C00` | `0x0000:0x7C00` | 512 B | Bootloader (loaded by BIOS) |
 | `0x7E00` | `0x0000:0x7E00` | 512 B | Disk read buffer (boot sector) |
 | `0x8000` | `0x0800:0x0000` | ~23 KB | Kernel code + data |
-| `0x9000` | `0x0900:0x0000` | 32 KB | User programs (loaded by `run`) |
+| `0xE000` | `0x0E00:0x0000` | ~8 KB | User programs (loaded by `run`) |
 
 ## Kernel Memory
 
@@ -56,11 +54,11 @@ The kernel is loaded at `0x0800:0x0000` (physical `0x8000`).
 
 ## User Program Space
 
-Programs loaded by the `run` command are placed at `0x0900:0x0000` (physical `0x9000`).
+Programs loaded by the `run` command are placed at `0x0E00:0x0000` (physical `0xE000`).
 
-- Programs run with `CS = DS = ES = SS = 0x0900`.
-- Stack starts at `SP = 0x8000` (physical `0x11000`), giving 32 KB of stack space.
-- Maximum program size: ~32 KB (limited by the segment boundary at `0x0A000`).
+- Programs run with `CS = DS = ES = SS = 0x0E00`.
+- Stack starts at `SP = 0x8000` (physical `0x16000`), giving 32 KB of stack space.
+- Maximum program size: ~8 KB (limited by the gap between the kernel end at `0xDA23` and the stack at `0x10000`).
 
 ## Boot Sector Layout
 

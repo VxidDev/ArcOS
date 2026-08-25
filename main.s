@@ -185,6 +185,7 @@ fat_buffer: times 16384 db 0
 sector_buffer: times 512 db 0
 cluster_buffer: times 512 db 0
 
+syscall_user_ds: dw 0
 current_dir_cluster: dw 0
 current_path: times 32 db 0
 dir_marker: db "<DIR>", 0

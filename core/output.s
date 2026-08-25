@@ -16,7 +16,7 @@ prints: ; prints a singular singular string | usage: si = string
     mov ah, 0x09
 
     mov bl, 0x07
-    add bl, [currentBg]
+    add bl, [cs:currentBg]
 
     mov bh, 0 ; page
     mov cx, 1 ; times to print
@@ -78,7 +78,7 @@ printnl: ; print a singular newline.
     mov al, 1 ; 1 line
 
     mov bh, 0x07 ; attribute for blank line (white on currentbg)
-    add bh, [currentBg]
+    add bh, [cs:currentBg]
 
     mov ch, 0 ; top row
     mov cl, 0 ; left column
@@ -98,7 +98,7 @@ clears: ; clear screen.
   mov al, 0 ; all screen
 
   mov bh, 0x07 ; attribute for blank line (white on current bg)
-  add bh, [currentBg]
+  add bh, [cs:currentBg]
 
   mov ch, 0 ; top row
   mov cl, 0 ; left column

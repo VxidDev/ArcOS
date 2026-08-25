@@ -7,7 +7,7 @@ ArcOS includes a minimal FAT16 implementation for reading and writing files on t
 FAT16 (File Allocation Table, 16-bit) stores files as chains of clusters on disk. The disk is divided into:
 
 1. **Reserved sectors** - the boot sector (1 sector)
-2. **FAT copies** - the File Allocation Table, which maps clusters to the next cluster in a chain
+2. **FAT copies** - the File Allocation Table, which maps clusters to the next cluster in a chain (2 copies for redundancy)
 3. **Root directory** - a fixed-size area that holds directory entries for files in the root
 4. **Data area** - where file and directory content is actually stored
 
@@ -22,18 +22,19 @@ ArcOS creates a 4 MB FAT16 image with these parameters:
 | Bytes per sector | 512 |
 | Sectors per cluster | 1 |
 | Reserved sectors | 1 |
-| Number of FATs | 1 |
+| Number of FATs | 2 |
 | Max root entries | 224 |
-| Sectors per FAT | ~63 |
-| Root dir size | 14 sectors (224 entries * 32 bytes / 512) |
+| Sectors per FAT | ~32 |
+| Root dir size | 14 sectors (224 entries × 32 bytes / 512) |
 
 Layout on disk:
 
 ```
 Sector 0:        Boot sector (BPB + bootloader code)
-Sector 1-63:     FAT (File Allocation Table)
-Sector 64-77:    Root directory (14 sectors, 224 entries)
-Sector 78+:      Data area (clusters start here)
+Sector 1-32:     FAT copy 1 (File Allocation Table, 32 sectors)
+Sector 33-64:    FAT copy 2 (duplicate for redundancy)
+Sector 65-78:    Root directory (14 sectors, 224 entries)
+Sector 79+:      Data area (clusters start here)
 ```
 
 Cluster 2 is the first cluster in the data area. Cluster numbers start at 2, so to convert a cluster to a disk sector:
@@ -51,7 +52,7 @@ The BPB is at offset 11 in the boot sector. ArcOS reads these fields:
 | 11 | 2 | bytes_per_sector | Always 512 |
 | 13 | 1 | sectors_per_cluster | 1 in ArcOS |
 | 14 | 2 | reserved_sectors | 1 (just the boot sector) |
-| 16 | 1 | num_fats | 1 |
+| 16 | 1 | num_fats | 2 |
 | 17 | 2 | max_root_entries | 224 |
 | 19 | 2 | total_sectors | Total sectors on disk |
 | 22 | 2 | sectors_per_fat | Sectors occupied by one FAT copy |
@@ -147,17 +148,22 @@ When the kernel boots, `fat16_init` runs once:
 
 1. Find the file's directory entry by searching the current directory for the 8.3 name
 2. Get the first cluster number from the entry (offset 26)
-3. Loop: read the cluster into `cluster_buffer`, copy bytes to the output buffer, follow the FAT chain to the next cluster
+3. Loop: read the cluster into `cluster_buffer`, copy bytes to the output buffer via `es:[bx]`, follow the FAT chain to the next cluster
 4. Stop when the chain ends or the byte limit is reached
+
+When called from a user program (via syscall), `es` is set to the user's data segment so data is written directly to the program's buffer. When called from kernel code, `es` stays at `0x0800`.
 
 ## Writing a File
 
 `fat16_file_write`:
 
-1. Find the directory entry
-2. For each chunk of data: if the current cluster is 0, allocate a new one via `fat16_allocate_cluster`; read-modify-write the cluster; advance to the next cluster in the chain (allocating if needed)
+1. Find the directory entry (or create a new one if it doesn't exist)
+2. For each chunk of data: allocate a new cluster if needed, read-modify-write the cluster via `es:[bx]`, chain clusters together in the FAT
 3. Update the file size in the directory entry
-4. Write the FAT back to disk
+4. Re-read the directory from disk to pick up changes
+5. Write the FAT back to disk
+
+When called from a user program (via syscall), `es` is set to the user's data segment so data is read from the program's buffer. The filename must be in 8.3 format before calling.
 
 ## Creating a File
 
@@ -189,7 +195,7 @@ When the kernel boots, `fat16_init` runs once:
 
 ## Limitations
 
-- **Single FAT copy** - only one FAT is maintained (no redundancy)
+- **4 MB disk** - the FAT16 cache (16 KB) can only hold ~32 FAT sectors; with 1 sector per cluster, this limits the disk to ~4 MB
 - **No subdirectory traversal** - `current_dir_cluster` tracks the current directory, but there's no `cd` command to change it
 - **No long filenames** - only 8.3 names are supported
 - **Root directory is fixed size** - max 224 entries
@@ -209,7 +215,7 @@ When the kernel boots, `fat16_init` runs once:
 | `cluster_buffer` | 512 B | Buffer for reading/writing one cluster |
 | `bpb_sectors_per_cluster` | `db` | Sectors per cluster |
 | `bpb_reserved_sectors` | `dw` | Number of reserved sectors |
-| `bpb_num_fats_copy` | `db` | Number of FAT copies |
+| `bpb_num_fats_copy` | `db` | Number of FAT copies (2) |
 | `bpb_max_root_entries` | `dw` | Max entries in root directory |
 | `bpb_total_sectors` | `dw` | Total sectors on disk |
 | `bpb_sectors_per_fat` | `dw` | Sectors per FAT copy |

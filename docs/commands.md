@@ -163,7 +163,7 @@ Create a new directory. The name is converted to 8.3 format.
 run <FILENAME.BIN>
 ```
 
-Load a flat binary file from the FAT16 filesystem and execute it. The file is loaded into memory at segment `0x0900` (physical address `0x9000`). The program runs with `CS = DS = ES = SS = 0x0900`.
+Load a flat binary file from the FAT16 filesystem and execute it. The file is loaded into memory at segment `0x0E00` (physical address `0xE000`). The program runs with `CS = DS = ES = SS = 0x0E00`.
 
 Programs must return to the shell with `retf`.
 

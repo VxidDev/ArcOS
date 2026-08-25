@@ -30,6 +30,7 @@ make run    # build and run in QEMU
 | [Memory Layout](docs/memory.md) | Memory map, segment layout, boot sector structure |
 | [Internal API](docs/internals.md) | Kernel functions available to built-in commands |
 | [FAT16 Filesystem](docs/fat16.md) | Disk layout, cluster chains, directory entries, how files work |
+| [Project Structure](docs/structure.md) | Source tree, file roles, how the kernel and programs fit together |
 
 ## License
 

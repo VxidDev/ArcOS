@@ -1,21 +1,21 @@
 fat16_file_read: ; Read file. SI=8.3 name, BX=buffer, CX=max bytes. Returns AX=bytes read
-    push bp
-    mov bp, sp
-    sub sp, 6
-    mov [bp - 2], bx      ; buffer
-    mov [bp - 4], cx      ; max bytes
-    mov word [bp - 6], 0   ; bytes_read
+  push bp
+  mov bp, sp
+  sub sp, 6
+  mov [bp - 2], bx      ; buffer
+  mov [bp - 4], cx      ; max bytes
+  mov word [bp - 6], 0   ; bytes_read
 
-    mov ax, [current_dir_cluster]
-    call fat16_find_entry
-    cmp ax, 0
-    je .fr_done
+  mov ax, [current_dir_cluster]
+  call fat16_find_entry
+  cmp ax, 0
+  je .fr_done
 
-    mov si, ax
-    mov ax, [si + 26]
-    cmp ax, 0
-    je .fr_done
-    mov [.fr_cluster], ax
+  mov si, ax
+  mov ax, [si + 26]
+  cmp ax, 0
+  je .fr_done
+  mov [.fr_cluster], ax
 
 .fr_read_loop:
     mov ax, [bp - 6]
@@ -34,6 +34,14 @@ fat16_file_read: ; Read file. SI=8.3 name, BX=buffer, CX=max bytes. Returns AX=b
     add bx, [bp - 6]
     mov cx, 512
 
+    ; If called via syscall, switch ES to user DS for writing to user buffer
+    ; If called from kernel code, keep ES as kernel DS (0x0800)
+    push es
+    mov ax, [cs:syscall_user_ds]
+    test ax, ax
+    jz .fr_copy
+    mov es, ax
+
 .fr_copy:
     cmp cx, 0
     je .fr_copy_done
@@ -41,7 +49,7 @@ fat16_file_read: ; Read file. SI=8.3 name, BX=buffer, CX=max bytes. Returns AX=b
     cmp ax, [bp - 4]
     jae .fr_copy_done
     mov al, [si]
-    mov [bx], al
+    mov es:[bx], al
     inc si
     inc bx
     inc word [bp - 6]
@@ -49,6 +57,8 @@ fat16_file_read: ; Read file. SI=8.3 name, BX=buffer, CX=max bytes. Returns AX=b
     jmp .fr_copy
 
 .fr_copy_done:
+    pop es              ; restore ES
+
     mov ax, [.fr_cluster]
     call fat16_next_cluster
     mov [.fr_cluster], ax
@@ -63,25 +73,38 @@ fat16_file_read: ; Read file. SI=8.3 name, BX=buffer, CX=max bytes. Returns AX=b
 .fr_cluster: dw 0
 
 fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes written
-    push bp
-    mov bp, sp
-    sub sp, 6
-    mov [bp - 2], bx      ; data
-    mov [bp - 4], cx      ; bytes
-    mov word [bp - 6], 0   ; written
+  push bp
+  mov bp, sp
+  sub sp, 8
+  mov [bp - 2], bx ; data
+  mov [bp - 4], cx ; bytes
+  mov word [bp - 6], 0 ; written
+  mov [bp - 8], si     ; save name pointer (fat16_find_entry clobbers SI)
 
-    mov ax, [current_dir_cluster]
-    call fat16_find_entry
-    cmp ax, 0
-    je .fw_done
+  mov ax, [current_dir_cluster]
+  mov si, [bp - 8]
+  call fat16_find_entry
+  cmp ax, 0
+  jne .file_found
 
-    mov [.fw_entry], ax
-    mov si, ax
-    mov ax, [si + 26]
-    mov [.fw_cluster], ax
+  mov si, [bp - 8]
+  call fat16_file_create
 
-    cmp word [bp - 4], 0
-    je .fw_update_size
+  mov ax, [current_dir_cluster]
+  mov si, [bp - 8]
+  call fat16_find_entry
+  cmp ax, 0
+  je .fw_done
+
+  .file_found:
+
+  mov [.fw_entry], ax
+  mov si, ax
+  mov ax, [si + 26]
+  mov [.fw_cluster], ax
+
+  cmp word [bp - 4], 0
+  je .fw_update_size
 
 .fw_write_loop:
     mov ax, [.fw_cluster]
@@ -102,6 +125,11 @@ fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes
     call fat16_read_cluster
     popa
 
+    ; Switch ES to user DS for reading user data buffer
+    push es
+    mov ax, [cs:syscall_user_ds]
+    mov es, ax
+
     mov si, cluster_buffer
     mov bx, [bp - 2]
     add bx, [bp - 6]
@@ -113,7 +141,7 @@ fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes
     mov ax, [bp - 6]
     cmp ax, [bp - 4]
     jae .fw_copy_done
-    mov al, [bx]
+    mov al, es:[bx]
     mov [si], al
     inc si
     inc bx
@@ -122,6 +150,8 @@ fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes
     jmp .fw_copy
 
 .fw_copy_done:
+    pop es              ; restore ES to 0x0800
+
     mov ax, [.fw_cluster]
     mov di, cluster_buffer
     call fat16_write_cluster
@@ -135,14 +165,16 @@ fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes
     cmp ax, 0
     jne .fw_chain_ok
 
+    ; No next cluster — allocate and link
     call fat16_allocate_cluster
     cmp ax, 0
     je .fw_update_size
-    mov bx, [.fw_cluster]
-    mov dx, ax
-    call fat16_set_fat_entry
-    call fat16_write_fat
+    mov dx, ax                ; dx = new cluster (value to write)
+    mov ax, [.fw_cluster]     ; ax = current cluster (entry to set)
+    call fat16_set_fat_entry  ; FAT[current] = new_cluster
     mov ax, dx
+    mov [.fw_cluster], ax
+    jmp .fw_write_loop
 
 .fw_chain_ok:
     mov [.fw_cluster], ax
@@ -150,9 +182,70 @@ fat16_file_write: ; Write file. SI=8.3 name, BX=data, CX=bytes. Returns AX=bytes
 
 .fw_update_size:
     call fat16_write_fat
-    mov si, [.fw_entry]
+
+    ; Re-read directory into cluster_buffer to update the entry
+    cmp word [current_dir_cluster], 0
+    je .fw_re_read_root
+    mov ax, [current_dir_cluster]
+    mov di, cluster_buffer
+    call fat16_read_cluster
+    jmp .fw_update_entry
+
+.fw_re_read_root:
+    mov ax, [root_dir_start]
+    mov bx, ax
+    mov di, cluster_buffer
+    call disk_read_sector
+
+.fw_update_entry:
+    ; Find the entry again in cluster_buffer
+    mov si, cluster_buffer
+    mov cx, 16               ; one sector = 16 entries max
+    mov dx, [bp - 8]         ; dx = name to match
+.fw_scan:
+    cmp cx, 0
+    je .fw_done
+    cmp byte [si], 0
+    je .fw_done
+    cmp byte [si], 0xE5
+    je .fw_scan_next
+    cmp byte [si + 11], 0x0F
+    je .fw_scan_next
+    push cx
+    push si
+    push dx
+    mov di, dx
+    mov cx, 11
+    repe cmpsb
+    pop dx
+    pop si
+    pop cx
+    je .fw_found_entry
+.fw_scan_next:
+    add si, 32
+    dec cx
+    jmp .fw_scan
+
+.fw_found_entry:
+    ; Update starting cluster
+    mov ax, [.fw_cluster]
+    mov [si + 26], ax
+    ; Update file size
     mov ax, [bp - 6]
     mov [si + 28], ax
+    ; Write directory back to disk
+    cmp word [current_dir_cluster], 0
+    je .fw_write_root_dir
+    mov ax, [current_dir_cluster]
+    mov di, cluster_buffer
+    call fat16_write_cluster
+    jmp .fw_done
+
+.fw_write_root_dir:
+    mov ax, [root_dir_start]
+    mov bx, ax
+    mov di, cluster_buffer
+    call disk_write_sector
 
 .fw_done:
     mov ax, [bp - 6]

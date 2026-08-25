@@ -12,28 +12,30 @@ ArcOS/
 │   ├── syscalls.md           # INT 0x80 syscall documentation
 │   ├── programs.md           # Writing standalone programs
 │   ├── memory.md             # Memory map and segment layout
+│   ├── fat16.md              # FAT16 filesystem internals
 │   └── internals.md          # Kernel-internal function reference
 ├── core/
 │   ├── output.s              # Screen output (printc, prints, printcs, printnl, clears)
 │   ├── cursor.s              # Cursor control (getcrsr, mvcrsr)
-│   ├── input.s               # Keyboard input (getchar, userInput)
+│   ├── input.s               # Keyboard input (getchar, getline, userInput)
 │   ├── shell.s               # Shell loop, command parser (parseInput)
 │   ├── shell_fat16.s         # Filesystem commands (ls, cat, touch, rm, mkdir, run)
-│   ├── syscall.s             # INT 0x80 handler
+│   ├── syscall.s             # INT 0x80 handler (output, input, filesystem, system)
 │   ├── system.s              # Shutdown and reboot
 │   ├── utils.s               # String/math utilities (atoi, itoa, memcmp_n, streq, strlen, strhex, sleep)
-│   ├── disk.s                # INT 13h disk I/O (LBA reads)
+│   ├── disk.s                # INT 13h disk I/O (LBA reads/writes)
 │   ├── fat16_bpb.s           # BPB parsing (reads FAT16 header from boot sector)
-│   ├── fat16.s               # FAT16 init, cluster reading
-│   ├── fat16_dir.s           # Directory listing, 8.3 name conversion
-│   └── fat16_file.s          # File read, create, delete, mkdir
+│   ├── fat16.s               # FAT16 init, cluster read/write, allocation
+│   ├── fat16_dir.s           # Directory listing, search, 8.3 name conversion
+│   └── fat16_file.s          # File read, write, create, delete, mkdir
 └── progs/
     ├── calc.s                # Calculator (built-in shell command)
     ├── time.s                # Clock display (built-in)
     ├── tzconfig.s            # Timezone configuration (built-in)
     ├── sleep.s               # Sleep command (built-in)
     ├── bgconfig.s            # Background color configuration (built-in)
-    └── hello.s               # Example standalone program
+    ├── hello.s               # Example standalone program
+    └── txtedit.s             # Text editor standalone program
 ```
 
 ## File Roles
@@ -67,3 +69,13 @@ Files like `calc.s`, `time.s`, etc. are `%include`d into the kernel. They are ca
 ### Standalone Programs
 
 Any `.s` file in `progs/` that is **not** `%include`d into `main.s` is built as a separate flat binary (`.bin`). These are loaded and executed via the `run` shell command. They can only use `INT 0x80` syscalls for I/O - they cannot call kernel functions directly.
+
+### Text Editor (`progs/txtedit.s`)
+
+A standalone text editor program that demonstrates file I/O via syscalls. Features:
+- Prompts for a filename on startup
+- Loads existing file contents via `sys_read_file` (0x06)
+- Full-screen editing with cursor navigation
+- Backspace with line wrapping
+- **Ctrl+S** to save (writes via `sys_write_file` 0x05)
+- **Ctrl+Q** to quit (returns to shell via `retf`)

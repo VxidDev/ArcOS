@@ -20,7 +20,10 @@ fat16_list_dir: ; List files in current directory
     mov di, cluster_buffer
     call disk_read_sector
     mov word [.ld_offset], cluster_buffer
-    mov ax, [bpb_max_root_entries]
+    mov ax, 512
+    mov bx, 32
+    xor dx, dx
+    div bx
     mov [.ld_count], ax
 
 .ld_parse:
@@ -124,7 +127,7 @@ fat16_find_entry: ; Find 8.3 entry. SI=name(11), AX=dir cluster. Returns AX=entr
 
 .fe_scan:
     mov si, cluster_buffer
-    mov cx, [bpb_max_root_entries]
+    mov cx, 512 / 32        ; one sector = 16 entries max
 
 .fe_loop:
     cmp cx, 0

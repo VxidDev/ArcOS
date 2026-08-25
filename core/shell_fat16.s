@@ -150,18 +150,18 @@ cmd_run: ; Run program from disk. Usage: run <filename>
     call fat16_name_to_83
 
     mov si, run_83_name
-    mov bx, 0x1000
-    mov cx, 8192
+    mov bx, 0x6000        ; Load to 0x0800:0x6000 = physical 0xE000
+    mov cx, 24576
     call fat16_file_read
     cmp ax, 0
     je .ru_not_found
 
     push ds
     push es
-    mov ax, 0x0900
+    mov ax, 0x0E00
     mov ds, ax
     mov es, ax
-    call 0x0900:0x0000
+    call 0x0E00:0x0000
     mov ax, 0x0800
     mov ds, ax
     mov es, ax
