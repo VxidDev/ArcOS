@@ -1,4 +1,4 @@
-BUILTIN_PROGS = calc time tzconfig sleep bgconfig
+BUILTIN_PROGS = calc time tzconfig sleep bgconfig as16
 PROGRAMS = $(filter-out $(addprefix progs/,$(addsuffix .bin,$(BUILTIN_PROGS))),$(patsubst progs/%.s,progs/%.bin,$(wildcard progs/*.s)))
 
 ArcOS.bin: boot.bin kernel.bin $(PROGRAMS)
@@ -6,6 +6,7 @@ ArcOS.bin: boot.bin kernel.bin $(PROGRAMS)
 	dd if=/dev/zero of=ArcOS.img bs=512 count=8192 2>/dev/null
 	mkfs.fat -F 16 -s 1 -h 0 -r 224 -S 512 -f 2 -n ARCOS ArcOS.img 2>/dev/null
 	mcopy -i ArcOS.img kernel.bin ::KERNEL.BIN
+	mcopy -i ArcOS.img helowrld.asm ::HELOWRLD.ASM
 	for f in $(PROGRAMS); do \
 		name=$$(basename $$f .bin); \
 		mcopy -i ArcOS.img $$f ::$$(echo $$name | tr a-z A-Z).BIN; \

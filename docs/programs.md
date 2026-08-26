@@ -1,6 +1,6 @@
 # Writing Programs
 
-Standalone programs are flat binary executables assembled with NASM. They are loaded into memory at segment `0x0E00` (physical address `0xE000`) and executed by the `run` command.
+Standalone programs are flat binary executables assembled with NASM. They are loaded into memory at segment `0x2800` (physical address `0x28000`) and executed by the `run` command.
 
 ## Program Template
 
@@ -22,9 +22,9 @@ msg: db "Hello from my program!", 0
 
 ## Rules
 
-1. **Start with `[org 0x0000]`** - programs are loaded at offset 0 within segment `0x0E00`.
+1. **Start with `[org 0x0000]`** - programs are loaded at offset 0 within segment `0x2800`.
 2. **Put code first** - execution starts at offset 0. Do not put data or use `section .data` before your code.
-3. **Return with `retf`** - this is a far return that pops the return address pushed by `call 0x0E00:0x0000` and returns control to the shell.
+3. **Return with `retf`** - this is a far return that pops the return address pushed by `call 0x2800:0x0000` and returns control to the shell.
 4. **Use INT 0x80 syscalls** for I/O. Do not use BIOS interrupts directly - the kernel's IVT entries may differ from the standard BIOS layout.
 5. **Preserve segment registers** - the kernel expects `DS = ES = 0x0800` when your program returns. If you modify them, restore before `retf`.
 6. **Do not modify SS or SP** - the stack is in kernel memory space. Modifying SS/SP will corrupt the kernel stack and crash.
@@ -33,26 +33,26 @@ msg: db "Hello from my program!", 0
 
 | Register | Value | Notes |
 |----------|-------|-------|
-| `CS` | `0x0E00` | Code segment |
-| `DS` | `0x0E00` | Data segment (set by kernel before call) |
-| `ES` | `0x0E00` | Extra segment (set by kernel before call) |
+| `CS` | `0x2800` | Code segment |
+| `DS` | `0x2800` | Data segment (set by kernel before call) |
+| `ES` | `0x2800` | Extra segment (set by kernel before call) |
 | `SS` | `0x0800` | Stack segment (kernel segment, shared with kernel stack) |
-| `SP` | ~`0x8000` | Stack pointer (kernel stack area, grows downward) |
+| `SP` | ~`0xFFFF` | Stack pointer (top of kernel segment, grows downward) |
 
-The program's code/data spans from `0x0E00:0x0000` to ~`0x0E00:0x5FFF` (up to ~24 KB). The stack is in kernel space at `0x0800:0x8000` (physical `0x10000`), so programs share the kernel's stack. Maximum safe program size is ~8 KB to avoid overlapping the stack.
+The program's code/data spans from `0x2800:0x0000` to ~`0x2800:0x5FFF` (up to ~24 KB). The stack is in kernel space at `0x0800:0xFFFF` (physical `0x17FFF`), so programs share the kernel's stack. Maximum safe program size is ~24 KB.
 
 ## Memory Layout
 
 ```
-0x0E00:0x0000 ┌──────────────────────────┐
-              │  Program code + data     │  Up to ~8 KB
+0x2800:0x0000 ┌──────────────────────────┐
+              │  Program code + data     │  Up to ~24 KB
               │                          │
-0x0E00:0x2000 ├──────────────────────────┤
+0x2800:0x6000 ├──────────────────────────┤
               │  (free space)            │
               │                          │
-0x0800:0x8000 ├──────────────────────────┤
+0x0800:0xFFFF ├──────────────────────────┤
               │  Kernel stack            │  Grows downward (shared)
-              │  (physical 0x10000)      │
+              │  (physical 0x17FFF)      │
 ```
 
 ## Available Syscalls

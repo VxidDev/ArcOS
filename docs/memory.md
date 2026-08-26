@@ -21,16 +21,16 @@ ArcOS runs in 16-bit real mode. All addresses are segment:offset pairs (physical
 0x7E00  ├──────────────────────────┤
         │  Boot read buffer        │  512 bytes (FAT sectors, root dir)
 0x8000  ├──────────────────────────┤
-        │  Kernel                  │  Code, data, BSS (~23 KB)
+        │  Kernel                  │  Code, data, BSS (~64 KB segment)
         │  0x0800:0x0000           │
         │         ...              │
-0xDA23  ├──────────────────────────┤
+0x17FFF  ├──────────────────────────┤
+        │  Kernel stack            │  Grows downward from SP=0xFFFF
+        │  0x0800:0xFFFF           │
+0x28000 ├──────────────────────────┤
         │  User programs           │  Loaded by `run` command
-        │  0x0E00:0x0000           │  (~8 KB available)
+        │  0x2800:0x0000           │  (~24 KB available)
         │         ...              │
-0x10000 ├──────────────────────────┤
-        │  Kernel stack            │  Grows down (32 KB)
-        │  0x0800:0x8000           │
 ```
 
 ## Key Addresses
@@ -41,24 +41,26 @@ ArcOS runs in 16-bit real mode. All addresses are segment:offset pairs (physical
 | `0x00400` | `0x0040:0x0000` | 256 B | BIOS Data Area |
 | `0x7C00` | `0x0000:0x7C00` | 512 B | Bootloader (loaded by BIOS) |
 | `0x7E00` | `0x0000:0x7E00` | 512 B | Disk read buffer (boot sector) |
-| `0x8000` | `0x0800:0x0000` | ~23 KB | Kernel code + data |
-| `0xE000` | `0x0E00:0x0000` | ~8 KB | User programs (loaded by `run`) |
+| `0x8000` | `0x0800:0x0000` | ~64 KB | Kernel code + data |
+| `0x17FFF` | `0x0800:0xFFFF` | - | Kernel stack top (grows downward) |
+| `0x28000` | `0x2800:0x0000` | ~24 KB | User programs (loaded by `run`) |
 
 ## Kernel Memory
 
 The kernel is loaded at `0x0800:0x0000` (physical `0x8000`).
 
-- **Code and data** occupy approximately 23 KB (kernel binary size).
-- **Stack** grows downward from `0x0800:0x8000` (physical `0x10000`).
-- The kernel binary must not exceed ~31 KB to avoid colliding with the stack.
+- **Code and data** occupy approximately 2-3 KB (kernel binary size).
+- **Available space** extends to ~128 KB, providing room for buffers, FAT cache, and future growth.
+- **Stack** grows downward from `0x0800:0xFFFF` (physical `0x17FFF`).
 
 ## User Program Space
 
-Programs loaded by the `run` command are placed at `0x0E00:0x0000` (physical `0xE000`).
+Programs loaded by the `run` command are placed at `0x2800:0x0000` (physical `0x28000`).
 
-- Programs run with `CS = DS = ES = SS = 0x0E00`.
-- Stack starts at `SP = 0x8000` (physical `0x16000`), giving 32 KB of stack space.
-- Maximum program size: ~8 KB (limited by the gap between the kernel end at `0xDA23` and the stack at `0x10000`).
+- Programs run with `CS = DS = ES = 0x2800`. `SS` remains `0x0800` (kernel segment).
+- The stack is in kernel space — programs share the kernel's stack.
+- Maximum program size: ~24 KB (limited by the gap between the user load address and the kernel stack).
+- Programs are loaded by `cmd_run`, which reads the file via `fat16_file_read` with `ES=0x2800`.
 
 ## Boot Sector Layout
 

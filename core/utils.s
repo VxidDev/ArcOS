@@ -188,63 +188,63 @@ strlen: ; count number of characters in string [si] and returns number of bytes 
             ret 
 
 streq: ; compare 2 null-terminated strings, returns al = 1 if equal, al = 0 otherwise. | usage: si = pointer 1, di = pointer 2
-    xor bx, bx ; counter 
+  xor bx, bx ; counter 
 
-    .loop:
-        mov al, byte [si + bx] ; *(si + bx) | si[i]
-        mov ah, byte [di + bx] ; *(di + bx) | di[i]
+  .loop:
+    mov al, byte [si + bx] ; *(si + bx) | si[i]
+    mov ah, byte [di + bx] ; *(di + bx) | di[i]
 
-        cmp al, 0
-        je .nullByte
+    cmp al, 0
+    je .nullByte
 
-        cmp ah, 0
-        je .nullByte
- 
-        cmp al, ah ; si[i] == di[i]
-        jne .neq 
+    cmp ah, 0
+    je .nullByte
 
-        inc bx 
-        jmp .loop
+    cmp al, ah ; si[i] == di[i]
+    jne .neq 
 
-    .nullByte:
-        cmp al, 0
-        jne .neq 
+    inc bx 
+    jmp .loop
 
-        cmp ah, 0
-        jne .neq 
+  .nullByte:
+    cmp al, 0
+    jne .neq 
 
-        jmp .eq
+    cmp ah, 0
+    jne .neq 
 
-    .eq:
-        mov al, 1
-        ret 
+    jmp .eq
 
-    .neq:
-        mov al, 0
-        ret   
+  .eq:
+    mov al, 1
+    ret 
+
+  .neq:
+    mov al, 0
+    ret   
 
 sleep: ; ax = ticks
-    mov di, ax 
+  mov di, ax 
 
+  mov ah, 0x00
+  int 0x1A
+
+  add dx, di
+  adc cx, 0
+
+  mov bx, dx
+  mov bp, cx
+
+  .loop:
     mov ah, 0x00
     int 0x1A
 
-    add dx, di
-    adc cx, 0
+    cmp cx, bp
+    jb .loop
+    ja .done
 
-    mov bx, dx
-    mov bp, cx
+    cmp dx, bx
+    jb .loop
 
-    .loop:
-        mov ah, 0x00
-        int 0x1A
-
-        cmp cx, bp
-        jb .loop
-        ja .done
-
-        cmp dx, bx
-        jb .loop
-
-    .done:
-        ret
+  .done:
+    ret

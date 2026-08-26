@@ -10,7 +10,7 @@ kernel_main:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x8000 
+    mov sp, 0xFFFF
 
     mov [kernel_bootdrive], dl ; save boot drive from BIOS
 
@@ -86,6 +86,7 @@ kernel_main:
 %include "progs/tzconfig.s"
 %include "progs/sleep.s"
 %include "progs/bgconfig.s"
+%include "progs/as16.s"
 
 kernel_bootdrive: db 0
 
@@ -167,6 +168,9 @@ mkdirCmdLen equ $ - mkdirCmd
 
 runCmd: db "run"
 runCmdLen equ $ - runCmd
+
+as16Cmd: db "as16"
+as16CmdLen equ $ - as16Cmd
 
 bpb_buffer: times 512 db 0
 bpb_sectors_per_cluster: db 0

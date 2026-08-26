@@ -119,7 +119,7 @@ syscallHandler:
     mov bx, ax ; Save return value from FAT function
     mov ax, [cs:syscall_user_ds]
     mov ds, ax
-    mov [0x5000], bx ; Store return value for user space
+    mov [0x5000], ax ; Store return value for user space
     mov ax, 0x0800
     mov ds, ax ; Reset DS back to kernel for next parts if needed
     mov word [cs:syscall_user_ds], 0 ; Reset so kernel callers don't get wrong ES

@@ -53,7 +53,7 @@ The BPB (bytes 0-61) provides filesystem geometry. The bootloader code (bytes 62
 ### Kernel (`main.s` + `core/`)
 
 `main.s` is the kernel entry point. It:
-1. Sets up segment registers (`DS = ES = SS = 0x0800`, `SP = 0x8000`)
+1. Sets up segment registers (`DS = ES = SS = 0x0800`, `SP = 0xFFFF`)
 2. Installs the `INT 0x80` syscall handler in the IVT
 3. Clears the screen
 4. Initializes the FAT16 filesystem

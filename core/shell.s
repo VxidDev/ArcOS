@@ -377,6 +377,16 @@ parseInput: ; parses user input and executes command based on it.
     ret
     .skipRun:
 
+    mov si, as16Cmd
+    mov bx, as16CmdLen
+    call memcmp_n
+    cmp al, 0
+    je .skipAs16
+    call as16
+    ret
+
+    .skipAs16:
+
     mov si, commandNotFound
     mov bl, 0x04
     add bl, [currentBg]
